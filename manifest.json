@@ -43,6 +43,43 @@
           ]
         },
         {
+          "name": "vertex_colors",
+          "path": "hub_images/vertex_colors",
+          "type": "directory",
+          "children": [
+            {
+              "name": "cascalho.webp",
+              "path": "hub_images/vertex_colors/cascalho.webp",
+              "type": "file",
+              "size": 32476
+            },
+            {
+              "name": "grama_escura.webp",
+              "path": "hub_images/vertex_colors/grama_escura.webp",
+              "type": "file",
+              "size": 23382
+            },
+            {
+              "name": "grama_verde.webp",
+              "path": "hub_images/vertex_colors/grama_verde.webp",
+              "type": "file",
+              "size": 29160
+            },
+            {
+              "name": "logo-universal.webp",
+              "path": "hub_images/vertex_colors/logo-universal.webp",
+              "type": "file",
+              "size": 27484
+            },
+            {
+              "name": "terra_clara.webp",
+              "path": "hub_images/vertex_colors/terra_clara.webp",
+              "type": "file",
+              "size": 26258
+            }
+          ]
+        },
+        {
           "name": "wiki_assets",
           "path": "hub_images/wiki_assets",
           "type": "directory",
@@ -1767,13 +1804,13 @@
               "name": "Sollumz_banner (1).svg",
               "path": "hub_images/wiki_assets/Sollumz_banner (1).svg",
               "type": "file",
-              "size": 4723
+              "size": 4673
             },
             {
               "name": "Sollumz_banner.svg",
               "path": "hub_images/wiki_assets/Sollumz_banner.svg",
               "type": "file",
-              "size": 4723
+              "size": 4673
             },
             {
               "name": "sollumz_extension_install.webp",
@@ -1797,7 +1834,7 @@
               "name": "Sollumz_logo.svg",
               "path": "hub_images/wiki_assets/Sollumz_logo.svg",
               "type": "file",
-              "size": 1776
+              "size": 1735
             },
             {
               "name": "testing.gif",
@@ -1862,7 +1899,13 @@
           ]
         }
       ]
+    },
+    {
+      "name": ".gitattributes",
+      "path": ".gitattributes",
+      "type": "file",
+      "size": 66
     }
   ],
-  "generated_at": 1785463728.6782818
+  "generated_at": 1785469859.6162457
 }
