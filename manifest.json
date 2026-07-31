@@ -6,43 +6,6 @@
       "type": "directory",
       "children": [
         {
-          "name": "images",
-          "path": "hub_images/images",
-          "type": "directory",
-          "children": [
-            {
-              "name": "cascalho.webp",
-              "path": "hub_images/images/cascalho.webp",
-              "type": "file",
-              "size": 32476
-            },
-            {
-              "name": "grama_escura.webp",
-              "path": "hub_images/images/grama_escura.webp",
-              "type": "file",
-              "size": 23382
-            },
-            {
-              "name": "grama_verde.webp",
-              "path": "hub_images/images/grama_verde.webp",
-              "type": "file",
-              "size": 29160
-            },
-            {
-              "name": "logo-universal.webp",
-              "path": "hub_images/images/logo-universal.webp",
-              "type": "file",
-              "size": 27484
-            },
-            {
-              "name": "terra_clara.webp",
-              "path": "hub_images/images/terra_clara.webp",
-              "type": "file",
-              "size": 26258
-            }
-          ]
-        },
-        {
           "name": "vertex_colors",
           "path": "hub_images/vertex_colors",
           "type": "directory",
@@ -1907,5 +1870,5 @@
       "size": 66
     }
   ],
-  "generated_at": 1785469859.6162457
+  "generated_at": 1785470004.3515167
 }
