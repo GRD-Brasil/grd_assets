@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GRD Brasil - Galeria de Assets</title>
+    <title>GRD Brasil - Assets Gallery</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
@@ -37,23 +37,23 @@
             <h1 class="text-4xl font-extrabold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-600 drop-shadow-[0_0_10px_rgba(249,115,22,0.3)]">
                 GRD Brasil Assets
             </h1>
-            <p class="text-zinc-400 mt-2 font-medium">Repositório Oficial de Imagens e Mídias</p>
+            <p class="text-zinc-400 mt-2 font-medium">Official Repository of Images and Media</p>
         </div>
 
         <!-- Barra de Pesquisa -->
         <div class="w-full flex justify-center mb-4">
-            <input type="text" id="searchInput" placeholder="Pesquisar por nome da imagem ou pasta..." class="w-full max-w-xl bg-zinc-900 border border-zinc-700 text-white rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-colors shadow-inner" />
+            <input type="text" id="searchInput" placeholder="Search by image or folder name..." class="w-full max-w-xl bg-zinc-900 border border-zinc-700 text-white rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-colors shadow-inner" />
         </div>
 
         <!-- Galeria -->
         <div id="gallery" class="gallery-grid w-full">
-            <div class="col-span-full text-center text-zinc-500 py-10 animate-pulse">Carregando assets...</div>
+            <div class="col-span-full text-center text-zinc-500 py-10 animate-pulse">Loading assets...</div>
         </div>
     </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-5 right-5 bg-orange-500 text-white px-5 py-3 rounded-lg font-bold shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
-        Caminho copiado!
+        Path copied!
     </div>
 
     <script>
@@ -89,8 +89,8 @@
 
                 renderGallery(allAssets);
             } catch (error) {
-                document.getElementById('gallery').innerHTML = `<div class="col-span-full text-center text-red-500">Erro ao carregar manifest.json</div>`;
-                console.error("Erro ao carregar manifest:", error);
+                document.getElementById('gallery').innerHTML = `<div class="col-span-full text-center text-red-500">Error loading manifest.json</div>`;
+                console.error("Error loading manifest:", error);
             }
         }
 
@@ -109,14 +109,14 @@
             gallery.innerHTML = '';
             
             if(assets.length === 0) {
-                gallery.innerHTML = `<div class="col-span-full text-center text-zinc-500 py-10">Nenhuma imagem encontrada.</div>`;
+                gallery.innerHTML = `<div class="col-span-full text-center text-zinc-500 py-10">No images found.</div>`;
                 return;
             }
 
             assets.forEach(asset => {
                 const card = document.createElement('div');
                 card.className = 'asset-card flex flex-col cursor-pointer group relative';
-                card.title = "Clique para copiar o caminho";
+                card.title = "Click to copy path";
                 card.onclick = () => {
                     navigator.clipboard.writeText(asset.path);
                     showToast();
