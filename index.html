@@ -8,23 +8,19 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
         body { font-family: 'Outfit', sans-serif; background-color: #09090b; color: #fff; }
+        
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 1.25rem;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.5rem;
         }
-        .asset-card {
-            background-color: #18181b;
-            border: 1px solid #27272a;
-            border-radius: 0.75rem;
-            overflow: hidden;
-            transition: all 0.3s ease;
+        
+        .folders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
         }
-        .asset-card:hover {
-            border-color: #f97316;
-            box-shadow: 0 0 15px rgba(249,115,22,0.3);
-            transform: translateY(-2px);
-        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #09090b; }
@@ -34,134 +30,258 @@
 </head>
 <body class="min-h-screen flex flex-col items-center py-10 px-5 relative overflow-x-hidden">
     
+    <!-- Background Glow -->
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-orange-500/10 blur-[100px] pointer-events-none rounded-full"></div>
 
     <div class="z-10 w-full max-w-7xl flex flex-col gap-8">
+        
         <!-- Header -->
-        <div class="text-center">
+        <div class="text-center relative">
             <h1 class="text-4xl font-extrabold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-600 drop-shadow-[0_0_10px_rgba(249,115,22,0.3)]">
                 GRD Brasil Assets
             </h1>
             <p class="text-zinc-400 mt-2 font-medium">Official Repository of Images and Media</p>
         </div>
 
-        <!-- Barra de Pesquisa e Filtros -->
-        <div class="w-full flex flex-col items-center gap-6 mb-4">
-            <input type="text" id="searchInput" placeholder="Search by image name..." class="w-full max-w-xl bg-zinc-900 border border-zinc-700 text-white rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-colors shadow-inner" />
-            
-            <!-- Folder Tabs -->
-            <div id="folder-filters" class="flex flex-wrap justify-center gap-3 w-full max-w-5xl">
-                <!-- Dynamically generated folders -->
+        <!-- Toolbar (Back Button & Search) -->
+        <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
+            <button id="backBtn" onclick="goBack()" class="hidden items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-700 hover:border-orange-500/50 hover:bg-zinc-800 rounded-xl text-zinc-300 font-semibold transition-all">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M19 12H5"></path><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Back to Folders
+            </button>
+            <div class="w-full max-w-xl relative ml-auto">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="searchInput" placeholder="Search across all assets..." class="w-full bg-zinc-900/80 border border-zinc-700 text-white rounded-xl pl-11 pr-4 py-3 outline-none focus:border-orange-500 transition-colors shadow-inner backdrop-blur-sm" />
             </div>
         </div>
 
-        <!-- Galeria -->
-        <div id="gallery" class="gallery-grid w-full">
-            <div class="col-span-full text-center text-zinc-500 py-10 animate-pulse">Loading assets...</div>
+        <!-- Dynamic Container (Folders or Gallery) -->
+        <div id="main-container" class="w-full">
+            <div class="text-center text-zinc-500 py-10 animate-pulse">Loading manifest...</div>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+        <button onclick="closeLightbox()" class="absolute top-6 right-6 text-zinc-500 hover:text-orange-500 transition-colors bg-zinc-900/50 p-2 rounded-full border border-white/5 hover:border-orange-500/50">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <div class="relative w-full h-full p-10 flex items-center justify-center" onclick="closeLightbox(event)" id="lightbox-container">
+            <img id="lightbox-img" src="" class="max-w-[90vw] max-h-[90vh] object-contain drop-shadow-2xl hidden rounded-xl" />
+            <video id="lightbox-vid" src="" class="max-w-[90vw] max-h-[90vh] object-contain drop-shadow-2xl hidden rounded-xl" autoplay controls></video>
         </div>
     </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-5 right-5 bg-orange-500 text-white px-5 py-3 rounded-lg font-bold shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
-        Path copied!
+        <span id="toast-msg">Copied!</span>
     </div>
 
     <script>
         let allAssets = [];
-        let folders = new Set();
-        let currentFolder = 'all';
+        let foldersData = {};
+        
+        let currentView = 'folders'; // 'folders' ou 'gallery'
+        let currentFolder = null;
 
-        // Função para extrair arquivos e descobrir pastas
+        // Extrai todos os arquivos da árvore JSON
         function extractFiles(node) {
             let files = [];
             if (node.type === 'file') {
                 files.push(node);
             } else if (node.children) {
-                node.children.forEach(child => {
-                    files = files.concat(extractFiles(child));
-                });
+                node.children.forEach(child => files = files.concat(extractFiles(child)));
             }
             return files;
         }
 
+        // Formata bytes
+        function formatBytes(bytes, decimals = 1) {
+            if (!+bytes) return '0 B';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+        }
+
+        // Inicializa lendo o manifest
         async function initGallery() {
             try {
                 const response = await fetch('./manifest.json');
                 const data = await response.json();
                 
                 if (data.root && Array.isArray(data.root)) {
-                    data.root.forEach(node => {
-                        allAssets = allAssets.concat(extractFiles(node));
-                    });
+                    data.root.forEach(node => allAssets = allAssets.concat(extractFiles(node)));
                 }
 
-                // Filtrar arquivos indesejados
+                // Filtrar os scripts do próprio repo
                 allAssets = allAssets.filter(a => !a.name.endsWith('.py') && !a.name.endsWith('.json') && !a.name.endsWith('.html'));
 
-                // Descobrir todas as pastas únicas baseadas no path
+                // Agrupar arquivos por pasta
                 allAssets.forEach(asset => {
                     const pathParts = asset.path.split('/');
-                    // Se estiver dentro de hub_images/algo/..., a pasta é 'algo'
-                    // Se pathParts.length > 2, significa que está em uma subpasta
+                    let folderName = 'root';
+                    
+                    // Exemplo: hub_images/images/foto.png -> folderName = 'images'
                     if (pathParts.length > 2) {
-                        const folderName = pathParts[1]; // ex: 'images' ou 'wiki_assets'
-                        folders.add(folderName);
-                        asset.folder = folderName;
-                    } else {
-                        asset.folder = 'root';
-                        folders.add('root');
+                        folderName = pathParts[1];
                     }
+                    
+                    if (!foldersData[folderName]) foldersData[folderName] = [];
+                    asset.folder = folderName;
+                    foldersData[folderName].push(asset);
                 });
 
-                renderFolderFilters();
-                renderGallery(allAssets);
+                renderView();
             } catch (error) {
-                document.getElementById('gallery').innerHTML = `<div class="col-span-full text-center text-red-500">Error loading manifest.json</div>`;
-                console.error("Error loading manifest:", error);
+                document.getElementById('main-container').innerHTML = `<div class="text-center text-red-500 py-10">Error loading manifest.json</div>`;
             }
         }
 
-        function renderFolderFilters() {
-            const container = document.getElementById('folder-filters');
-            container.innerHTML = '';
+        // Navegação
+        function openFolder(folderName) {
+            currentFolder = folderName;
+            currentView = 'gallery';
+            document.getElementById('searchInput').value = ''; // Limpa a busca ao entrar na pasta
+            renderView();
+        }
 
-            const allBtn = document.createElement('button');
-            allBtn.className = `px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${currentFolder === 'all' ? 'bg-orange-500 text-white border-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.3)]' : 'bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500 hover:text-white'}`;
-            allBtn.innerText = 'All';
-            allBtn.onclick = () => filterByFolder('all');
-            container.appendChild(allBtn);
+        function goBack() {
+            currentFolder = null;
+            currentView = 'folders';
+            document.getElementById('searchInput').value = '';
+            renderView();
+        }
 
-            Array.from(folders).sort().forEach(folder => {
-                const btn = document.createElement('button');
-                btn.className = `px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${currentFolder === folder ? 'bg-orange-500 text-white border-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.3)]' : 'bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500 hover:text-white'}`;
-                btn.innerText = folder;
-                btn.onclick = () => filterByFolder(folder);
-                container.appendChild(btn);
+        // Renderização Principal
+        function renderView() {
+            const container = document.getElementById('main-container');
+            const backBtn = document.getElementById('backBtn');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            // Se estiver buscando, forçamos a visualização de galeria pesquisando em TUDO
+            if (searchTerm.trim() !== '') {
+                backBtn.style.display = 'flex';
+                const filtered = allAssets.filter(a => a.name.toLowerCase().includes(searchTerm) || a.path.toLowerCase().includes(searchTerm));
+                renderGallery(filtered, container);
+                return;
+            }
+
+            // Visão normal sem busca
+            if (currentView === 'folders') {
+                backBtn.style.display = 'none';
+                renderFolders(container);
+            } else if (currentView === 'gallery') {
+                backBtn.style.display = 'flex';
+                renderGallery(foldersData[currentFolder] || [], container);
+            }
+        }
+
+        // Escuta a barra de pesquisa
+        document.getElementById('searchInput').addEventListener('input', renderView);
+
+        // Renderiza Grade de Pastas
+        function renderFolders(container) {
+            container.innerHTML = '<div class="folders-grid w-full" id="folders-grid"></div>';
+            const grid = document.getElementById('folders-grid');
+
+            const sortedFolders = Object.keys(foldersData).sort();
+
+            sortedFolders.forEach(folder => {
+                const count = foldersData[folder].length;
+                
+                const card = document.createElement('div');
+                card.className = 'group flex flex-col items-center justify-center gap-3 bg-zinc-900 border border-white/5 rounded-2xl p-8 cursor-pointer transition-all duration-300 hover:border-orange-500/50 hover:bg-zinc-800/80 hover:shadow-[0_8px_30px_rgba(249,115,22,0.1)] hover:-translate-y-1';
+                card.onclick = () => openFolder(folder);
+                
+                card.innerHTML = `
+                    <div class="relative">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-14 h-14 text-orange-500 opacity-80 group-hover:scale-110 transition-transform duration-300 group-hover:opacity-100">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-center mt-2 flex flex-col gap-1">
+                        <h3 class="text-white font-bold text-sm tracking-widest uppercase">${folder}</h3>
+                        <span class="text-zinc-500 text-[11px] font-mono">${count} itens</span>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
             });
         }
 
-        function filterByFolder(folder) {
-            currentFolder = folder;
-            renderFolderFilters();
-            applyFilters();
-        }
-
-        function applyFilters() {
-            const term = document.getElementById('searchInput').value.toLowerCase();
+        // Renderiza Galeria de Imagens
+        function renderGallery(assets, container) {
+            container.innerHTML = '<div class="gallery-grid w-full" id="gallery-grid"></div>';
+            const grid = document.getElementById('gallery-grid');
             
-            const filtered = allAssets.filter(asset => {
-                const matchesFolder = currentFolder === 'all' || asset.folder === currentFolder;
-                const matchesSearch = asset.name.toLowerCase().includes(term) || asset.path.toLowerCase().includes(term);
-                return matchesFolder && matchesSearch;
+            if(assets.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-zinc-500 py-10">No items found.</div>`;
+                return;
+            }
+
+            assets.forEach(asset => {
+                const card = document.createElement('div');
+                card.className = 'group relative flex flex-col bg-zinc-900 rounded-xl overflow-hidden border border-white/5 transition-all duration-300 hover:border-orange-500/50 hover:shadow-[0_8px_30px_rgba(249,115,22,0.1)]';
+                
+                const ext = asset.name.split('.').pop().toLowerCase();
+                const nameWithoutExt = asset.name.replace(`.${ext}`, '');
+                const fullUrl = window.location.href.split('/').slice(0,-1).join('/') + '/' + asset.path;
+
+                let mediaHtml = '';
+                if (['mp4', 'webm', 'ogg'].includes(ext)) {
+                    mediaHtml = `<video src="${asset.path}" class="w-full h-full object-contain" autoplay loop muted playsinline></video>`;
+                } else if (['svg'].includes(ext)) {
+                    mediaHtml = `<img src="${asset.path}" loading="lazy" class="w-full h-full object-contain p-6" />`;
+                } else {
+                    mediaHtml = `<img src="${asset.path}" loading="lazy" class="w-full h-full object-contain p-2" />`;
+                }
+
+                card.innerHTML = `
+                    <div class="relative h-48 bg-zinc-950 flex items-center justify-center overflow-hidden">
+                        <div class="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                        
+                        ${mediaHtml}
+                        
+                        <!-- Overlay Expand -->
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer" onclick="openLightbox('${asset.path}', '${ext}')">
+                            <div class="bg-zinc-900/80 p-3 rounded-full backdrop-blur-sm text-white border border-white/10 transform scale-90 group-hover:scale-100 transition-transform">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                            <button onclick="copyToClipboard('${nameWithoutExt}', 'Name Copied!')" class="p-2 bg-zinc-900/90 hover:bg-orange-500 text-zinc-400 hover:text-white rounded-lg backdrop-blur-md border border-white/10 transition-colors shadow-lg" title="Copy Name">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                            <button onclick="copyToClipboard('${fullUrl}', 'Link Copied!')" class="p-2 bg-zinc-900/90 hover:bg-orange-500 text-zinc-400 hover:text-white rounded-lg backdrop-blur-md border border-white/10 transition-colors shadow-lg" title="Copy Link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            </button>
+                            <a href="${asset.path}" download="${asset.name}" onclick="event.stopPropagation()" class="p-2 bg-zinc-900/90 hover:bg-orange-500 text-zinc-400 hover:text-white rounded-lg backdrop-blur-md border border-white/10 transition-colors shadow-lg flex items-center justify-center" title="Download">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 flex flex-col gap-2.5">
+                        <span class="text-sm font-bold text-white truncate" title="${nameWithoutExt}">${nameWithoutExt}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">${ext}</span>
+                            <span class="text-xs text-zinc-500 font-medium tracking-wide">${formatBytes(asset.size)}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
             });
-            
-            renderGallery(filtered);
         }
 
-        document.getElementById('searchInput').addEventListener('input', applyFilters);
-
-        function showToast() {
+        // Utils
+        function copyToClipboard(text, msg) {
+            navigator.clipboard.writeText(text);
             const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
             toast.style.transform = 'translateY(0)';
             toast.style.opacity = '1';
             setTimeout(() => {
@@ -170,44 +290,33 @@
             }, 2000);
         }
 
-        function renderGallery(assets) {
-            const gallery = document.getElementById('gallery');
-            gallery.innerHTML = '';
+        function openLightbox(url, ext) {
+            const lb = document.getElementById('lightbox');
+            const img = document.getElementById('lightbox-img');
+            const vid = document.getElementById('lightbox-vid');
             
-            if(assets.length === 0) {
-                gallery.innerHTML = `<div class="col-span-full text-center text-zinc-500 py-10">No images found.</div>`;
-                return;
+            img.classList.add('hidden');
+            vid.classList.add('hidden');
+            img.src = '';
+            vid.src = '';
+
+            if (['mp4', 'webm', 'ogg'].includes(ext)) {
+                vid.src = url;
+                vid.classList.remove('hidden');
+            } else {
+                img.src = url;
+                img.classList.remove('hidden');
             }
 
-            assets.forEach(asset => {
-                const card = document.createElement('div');
-                card.className = 'asset-card flex flex-col cursor-pointer group relative';
-                card.title = "Click to copy path";
-                card.onclick = () => {
-                    navigator.clipboard.writeText(asset.path);
-                    showToast();
-                };
+            lb.classList.remove('opacity-0', 'pointer-events-none');
+        }
 
-                let mediaHtml = '';
-                const ext = asset.name.split('.').pop().toLowerCase();
-                
-                if (['mp4', 'webm', 'ogg'].includes(ext)) {
-                    mediaHtml = `<video src="${asset.path}" class="w-full h-36 object-contain bg-black/50 p-2" autoplay loop muted playsinline></video>`;
-                } else if (['svg'].includes(ext)) {
-                    mediaHtml = `<img src="${asset.path}" alt="${asset.name}" loading="lazy" class="w-full h-36 object-contain p-4 bg-black/20" />`;
-                } else {
-                    mediaHtml = `<img src="${asset.path}" alt="${asset.name}" loading="lazy" class="w-full h-36 object-cover" />`;
-                }
-
-                card.innerHTML = `
-                    ${mediaHtml}
-                    <div class="p-3 flex flex-col gap-0.5 border-t border-white/5 bg-zinc-900/50 flex-1 justify-end">
-                        <span class="text-xs font-bold text-white truncate" title="${asset.name}">${asset.name}</span>
-                        <span class="text-[10px] text-zinc-500 font-mono truncate uppercase tracking-widest">${asset.folder}</span>
-                    </div>
-                `;
-                gallery.appendChild(card);
-            });
+        function closeLightbox(e) {
+            if (e && e.target.id !== 'lightbox-container') return;
+            const lb = document.getElementById('lightbox');
+            const vid = document.getElementById('lightbox-vid');
+            lb.classList.add('opacity-0', 'pointer-events-none');
+            vid.pause();
         }
 
         initGallery();
