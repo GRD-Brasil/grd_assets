@@ -1,12 +1,11 @@
-name: Build and Deploy
+name: Process Assets and Manifest
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+    paths:
+      - 'hub_images/**'
   workflow_dispatch:
 
 permissions:
@@ -20,37 +19,26 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.x'
 
-    - name: Install pnpm
-      run: npm install -g pnpm
+    - name: Install Pillow
+      run: pip install Pillow
 
-    - name: Install dependencies
-      working-directory: site-src
-      run: pnpm install
-
-    - name: Build React App
-      working-directory: site-src
-      run: pnpm run build
+    - name: Convert Images to WebP
+      run: python convert_to_webp.py
 
     - name: Generate Manifest
       run: python generate_manifest.py
 
     - name: Commit and push changes
-      if: github.event_name != 'pull_request'
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git add .
-        git commit -m 'Deploy: Update assets and site build' || echo "No changes to commit"
+        git commit -m 'Auto: Process images and generate manifest' || echo "No changes to commit"
         git push
       env:
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
