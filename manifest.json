@@ -6,6 +6,19 @@
       "type": "directory",
       "children": [
         {
+          "name": "download_images",
+          "path": "hub_images/download_images",
+          "type": "directory",
+          "children": [
+            {
+              "name": "nametables.webp",
+              "path": "hub_images/download_images/nametables.webp",
+              "type": "file",
+              "size": 23224
+            }
+          ]
+        },
+        {
           "name": "vertex_colors",
           "path": "hub_images/vertex_colors",
           "type": "directory",
@@ -1840,5 +1853,5 @@
       "size": 66
     }
   ],
-  "generated_at": 1785785267.5656831
+  "generated_at": 1786370822.6453688
 }
